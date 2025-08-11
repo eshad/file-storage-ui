@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Server - Professional File Management</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .sidebar-header h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .new-folder-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .new-folder-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .sidebar-hint {
+            margin-bottom: 15px;
+            padding: 8px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .sidebar-hint i {
+            color: #667eea;
+            margin-right: 5px;
+        }
+
+        .file-tree {
+            font-size: 0.95rem;
+        }
+
+        .tree-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .tree-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .tree-item.selected {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .tree-item.folder {
+            font-weight: 500;
+        }
+
+        .tree-item.file {
+            font-weight: 400;
+        }
+
+        .tree-item-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .tree-action-btn {
+            background: none;
+            border: none;
+            padding: 4px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #666;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .tree-action-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .tree-children {
+            margin-left: 20px;
+            border-left: 2px solid #f0f0f0;
+            padding-left: 15px;
+        }
+
+        .main-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #667eea;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .breadcrumb-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+            color: #5a67d8;
+        }
+
+        .breadcrumb-separator {
+            color: #999;
+            margin: 0 4px;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9ff, #f0f4ff);
+            border-radius: 15px;
+            border: 2px dashed #667eea;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section.dragover {
+            background: linear-gradient(135deg, #e8f0ff, #d4e4ff);
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .files-section {
+            margin-top: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-header h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .action-btn:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .action-btn.danger {
+            background: #fff5f5;
+            border-color: #fed7d7;
+            color: #e53e3e;
+        }
+
+        .action-btn.danger:hover {
+            background: #fed7d7;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .file-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-card.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .file-card.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .file-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+            word-break: break-word;
+            font-size: 0.95rem;
+        }
+
+        .file-info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .file-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .file-action-btn {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+            color: #666;
+            text-align: center;
+        }
+
+        .file-action-btn:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid #48bb78;
+        }
+
+        .toast.error {
+            border-left: 4px solid #e53e3e;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #f0f0f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+        }
+
+        .modal-btn.secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #e9ecef;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .main-panel {
+                order: 1;
+            }
+            
+            .files-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-cloud-upload-alt"></i>
+                Storage Server
+            </h1>
+            <p>Professional file management with elegant interface</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-folder-tree"></i> File Tree</h3>
+                    <button class="new-folder-btn" onclick="showNewFolderModal()" title="Create folder in current location">
+                        <i class="fas fa-plus"></i> New Folder
+                    </button>
+                </div>
+                <div class="sidebar-hint">
+                    <small><i class="fas fa-info-circle"></i> Right-click folders to create subfolders</small>
+                </div>
+                <div class="file-tree" id="fileTree">
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <h3>No files yet</h3>
+                        <p>Upload some files to get started</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-panel">
+                <div class="breadcrumb" id="breadcrumb">
+                    <span class="breadcrumb-item" onclick="navigateToFolder('')">
+                        <i class="fas fa-home"></i> Home
+                    </span>
+                </div>
+                
+                <div class="upload-section" id="uploadSection">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">Drop files here or click to upload</div>
+                    <div class="upload-subtext" id="uploadLocation">Support for multiple files, max 100MB per file</div>
+                    <input type="file" id="fileInput" class="file-input" multiple>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-upload"></i> Choose Files
+                    </button>
+                    <button class="upload-btn" onclick="uploadFiles()">
+                        <i class="fas fa-cloud"></i> Upload
+                    </button>
+                    
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">0%</div>
+                    </div>
+                </div>
+
+                <div class="files-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-file-alt"></i> Files</h3>
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="selectAll()">
+                                <i class="fas fa-check-square"></i> Select All
+                            </button>
+                            <button class="action-btn" onclick="copySelectedUrls()">
+                                <i class="fas fa-link"></i> Copy URLs
+                            </button>
+                            <button class="action-btn" onclick="renameSelected()">
+                                <i class="fas fa-edit"></i> Rename
+                            </button>
+                            <button class="action-btn danger" onclick="deleteSelected()">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="files-grid" id="filesGrid">
+                        <div class="empty-state">
+                            <i class="fas fa-file-upload"></i>
+                            <h3>No files uploaded</h3>
+                            <p>Upload files to see them here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Folder Modal -->
+    <div class="modal" id="newFolderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-folder-plus"></i> Create New Folder</h3>
+            </div>
+            <input type="text" class="modal-input" id="folderNameInput" placeholder="Enter folder name">
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeNewFolderModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="createFolder()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div class="modal" id="renameModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Rename Item</h3>
+            </div>
+            <input type="text" class="modal-input" id="renameInput" placeholder="Enter new name">
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeRenameModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="performRename()">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
