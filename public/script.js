@@ -8,6 +8,13 @@ document.addEventListener('DOMContentLoaded', function() {
     loadFileTree();
     setupDragAndDrop();
     setupFileInput();
+    
+    // Add global test function for debugging
+    window.testCopyUrl = function() {
+        const testUrl = '/api/files/test.png';
+        console.log('Testing copy URL with:', testUrl);
+        copyFileUrl(testUrl);
+    };
 });
 
 // Setup drag and drop functionality
@@ -110,6 +117,11 @@ function createTreeItem(item) {
     
     if (item.type === 'folder') {
         treeItem.addEventListener('click', () => {
+            // Navigate to folder and show its contents
+            currentFolder = item.path;
+            navigateToFolder(item.path);
+            
+            // Also toggle folder expansion in tree
             toggleFolder(treeItem, item);
         });
         
@@ -161,6 +173,13 @@ function selectTreeItem(treeItem) {
     updateBreadcrumb(currentFolder);
 }
 
+// Check if file is an image
+function isImageFile(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    return imageExtensions.includes(ext);
+}
+
 // Get file icon based on file extension
 function getFileIcon(filename) {
     const ext = filename.split('.').pop().toLowerCase();
@@ -205,8 +224,10 @@ async function uploadFiles(files = null) {
         formData.append('files', file);
     });
     
+    console.log('Upload - Current folder:', currentFolder);
     if (currentFolder) {
         formData.append('folderPath', currentFolder);
+        console.log('Upload - Added folderPath to formData:', currentFolder);
     }
     
     const progressContainer = document.getElementById('progressContainer');
@@ -268,14 +289,31 @@ function createFileCard(item) {
     fileCard.className = 'file-card';
     fileCard.dataset.path = item.path;
     
+    console.log('Creating file card for:', item.name, 'with URL:', item.url);
+    
+    const isImage = isImageFile(item.name);
     const icon = getFileIcon(item.name);
     const size = formatFileSize(item.size);
     const date = new Date(item.modified).toLocaleDateString();
     
+    let fileContent = '';
+    if (isImage) {
+        fileContent = `
+            <div class="file-image">
+                <img src="${item.url}" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <i class="${icon}" style="display: none;"></i>
+            </div>
+        `;
+    } else {
+        fileContent = `
+            <div class="file-icon">
+                <i class="${icon}"></i>
+            </div>
+        `;
+    }
+    
     fileCard.innerHTML = `
-        <div class="file-icon">
-            <i class="${icon}"></i>
-        </div>
+        ${fileContent}
         <div class="file-name">${item.name}</div>
         <div class="file-info">
             <div>${size}</div>
@@ -302,6 +340,17 @@ function createFileCard(item) {
             toggleFileSelection(fileCard);
         }
     });
+    
+    // Add image preview on click for image files
+    if (isImage) {
+        const imageElement = fileCard.querySelector('img');
+        if (imageElement) {
+            imageElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showImagePreview(item.url, item.name);
+            });
+        }
+    }
     
     return fileCard;
 }
@@ -331,11 +380,47 @@ function selectAll() {
 // Copy file URL
 function copyFileUrl(url) {
     const fullUrl = window.location.origin + url;
-    navigator.clipboard.writeText(fullUrl).then(() => {
-        showToast('URL copied to clipboard', 'success');
-    }).catch(() => {
+    console.log('Copying URL:', fullUrl);
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            showToast('URL copied to clipboard', 'success');
+        }).catch((err) => {
+            console.error('Clipboard API failed:', err);
+            // Fallback to old method
+            fallbackCopyTextToClipboard(fullUrl);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(fullUrl);
+    }
+}
+
+// Fallback copy function for older browsers
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showToast('URL copied to clipboard', 'success');
+        } else {
+            showToast('Failed to copy URL', 'error');
+        }
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
         showToast('Failed to copy URL', 'error');
-    });
+    }
+    
+    document.body.removeChild(textArea);
 }
 
 // Copy selected URLs
@@ -351,11 +436,22 @@ function copySelectedUrls() {
     }).filter(url => url);
     
     if (urls.length > 0) {
-        navigator.clipboard.writeText(urls.join('\n')).then(() => {
-            showToast(`${urls.length} URL(s) copied to clipboard`, 'success');
-        }).catch(() => {
-            showToast('Failed to copy URLs', 'error');
-        });
+        const urlText = urls.join('\n');
+        console.log('Copying URLs:', urlText);
+        
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(urlText).then(() => {
+                showToast(`${urls.length} URL(s) copied to clipboard`, 'success');
+            }).catch((err) => {
+                console.error('Clipboard API failed:', err);
+                // Fallback to old method
+                fallbackCopyTextToClipboard(urlText);
+            });
+        } else {
+            // Fallback for older browsers
+            fallbackCopyTextToClipboard(urlText);
+        }
     }
 }
 
@@ -479,6 +575,32 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// Show image preview
+function showImagePreview(imageUrl, imageName) {
+    const modal = document.createElement('div');
+    modal.className = 'modal show';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 90%; max-height: 90%; padding: 20px;">
+            <div class="modal-header">
+                <h3>${imageName}</h3>
+                <button onclick="this.closest('.modal').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+            </div>
+            <div style="text-align: center;">
+                <img src="${imageUrl}" alt="${imageName}" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+            </div>
+        </div>
+    `;
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+    
+    document.body.appendChild(modal);
+}
+
 // Show toast notification
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');
@@ -578,6 +700,10 @@ function navigateToFolder(folderPath) {
     
     // Show current folder contents in grid
     showFolderContents(folderPath);
+    
+    // Debug logging
+    console.log('Navigated to folder:', folderPath);
+    console.log('Current folder set to:', currentFolder);
 }
 
 // Update upload location text
@@ -594,21 +720,45 @@ function updateUploadLocation(folderPath) {
 function showFolderContents(folderPath) {
     const filesGrid = document.getElementById('filesGrid');
     
-    // Find the folder in the tree data
-    const folder = findFolderByPath(fileTreeData, folderPath);
+    console.log('showFolderContents called with folderPath:', folderPath);
+    console.log('fileTreeData:', fileTreeData);
     
-    if (!folder || !folder.children) {
-        filesGrid.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-folder-open"></i>
-                <h3>Empty folder</h3>
-                <p>This folder is empty</p>
-            </div>
-        `;
-        return;
+    let files = [];
+    
+    if (folderPath === '') {
+        // Root folder - show files directly in the root
+        files = fileTreeData.filter(item => item.type === 'file');
+        console.log('Root folder files:', files);
+    } else {
+        // Find the folder in the tree data
+        const folder = findFolderByPath(fileTreeData, folderPath);
+        console.log('Found folder:', folder);
+        
+        if (!folder) {
+            filesGrid.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>Folder not found</h3>
+                    <p>This folder doesn't exist</p>
+                </div>
+            `;
+            return;
+        }
+        
+        if (!folder.children || folder.children.length === 0) {
+            filesGrid.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>Empty folder</h3>
+                    <p>This folder is empty. Upload files to see them here.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        files = folder.children.filter(item => item.type === 'file');
+        console.log('Folder files:', files);
     }
-    
-    const files = folder.children.filter(item => item.type === 'file');
     
     if (files.length === 0) {
         filesGrid.innerHTML = `

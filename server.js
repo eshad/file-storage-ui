@@ -65,14 +65,18 @@ app.get('/api/files', async (req, res) => {
 // Upload files
 app.post('/api/upload', upload.array('files'), (req, res) => {
   try {
-    const uploadedFiles = req.files.map(file => ({
-      originalName: file.originalname,
-      filename: file.filename,
-      path: file.path,
-      size: file.size,
-      mimetype: file.mimetype,
-      url: `/api/files/${encodeURIComponent(file.filename)}`
-    }));
+    const uploadedFiles = req.files.map(file => {
+      // Calculate the relative path for the URL
+      const relativePath = path.relative('uploads', file.path);
+      return {
+        originalName: file.originalname,
+        filename: file.filename,
+        path: relativePath,
+        size: file.size,
+        mimetype: file.mimetype,
+        url: `/api/files/${encodeURIComponent(relativePath)}`
+      };
+    });
     
     res.json({ 
       success: true, 
@@ -177,12 +181,13 @@ app.put('/api/rename', async (req, res) => {
 });
 
 // Serve files
-app.get('/api/files/:filename', (req, res) => {
-  const filename = decodeURIComponent(req.params.filename);
-  const filePath = path.join('uploads', filename);
+app.get('/api/files/*', (req, res) => {
+  const filePath = req.params[0];
+  const decodedPath = decodeURIComponent(filePath);
+  const fullPath = path.join('uploads', decodedPath);
   
-  if (fs.existsSync(filePath)) {
-    res.sendFile(path.resolve(filePath));
+  if (fs.existsSync(fullPath)) {
+    res.sendFile(path.resolve(fullPath));
   } else {
     res.status(404).json({ error: 'File not found' });
   }
@@ -217,7 +222,7 @@ async function buildFileTree(dirPath, relativePath = '') {
           path: itemRelativePath,
           size: stats.size,
           modified: stats.mtime,
-          url: `/api/files/${encodeURIComponent(item)}`
+          url: `/api/files/${encodeURIComponent(itemRelativePath)}`
         });
       }
     }
@@ -237,7 +242,8 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Storage Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Storage Server running on http://0.0.0.0:${PORT}`);
+  console.log(`🌐 Accessible from: http://194.233.87.182:${PORT}`);
   console.log(`📁 Upload directory: ${path.resolve('uploads')}`);
 }); 

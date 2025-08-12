@@ -404,6 +404,30 @@
             text-align: center;
         }
 
+        .file-image {
+            margin-bottom: 15px;
+            text-align: center;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .file-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .file-image i {
+            font-size: 2.5rem;
+            color: #667eea;
+        }
+
         .file-name {
             font-weight: 500;
             color: #333;
@@ -512,6 +536,9 @@
         }
 
         .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
         }
 
@@ -519,6 +546,7 @@
             font-size: 1.3rem;
             font-weight: 600;
             color: #333;
+            margin: 0;
         }
 
         .modal-input {
@@ -649,20 +677,23 @@
                 <div class="files-section">
                     <div class="section-header">
                         <h3><i class="fas fa-file-alt"></i> Files</h3>
-                        <div class="action-buttons">
-                            <button class="action-btn" onclick="selectAll()">
-                                <i class="fas fa-check-square"></i> Select All
-                            </button>
-                            <button class="action-btn" onclick="copySelectedUrls()">
-                                <i class="fas fa-link"></i> Copy URLs
-                            </button>
-                            <button class="action-btn" onclick="renameSelected()">
-                                <i class="fas fa-edit"></i> Rename
-                            </button>
-                            <button class="action-btn danger" onclick="deleteSelected()">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </div>
+                                            <div class="action-buttons">
+                        <button class="action-btn" onclick="selectAll()">
+                            <i class="fas fa-check-square"></i> Select All
+                        </button>
+                        <button class="action-btn" onclick="copySelectedUrls()">
+                            <i class="fas fa-link"></i> Copy URLs
+                        </button>
+                        <button class="action-btn" onclick="renameSelected()">
+                            <i class="fas fa-edit"></i> Rename
+                        </button>
+                        <button class="action-btn danger" onclick="deleteSelected()">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        <button class="action-btn" onclick="testCopyUrl()" style="background: #28a745;">
+                            <i class="fas fa-bug"></i> Test Copy
+                        </button>
+                    </div>
                     </div>
                     <div class="files-grid" id="filesGrid">
                         <div class="empty-state">
